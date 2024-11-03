@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Large File Converter</title>
+  <style>
+    #progress-bar {
+      width: 100%;
+      height: 20px;
+      background-color: #ddd;
+      margin-top: 10px;
+    }
+    #progress-bar div {
+      height: 100%;
+      width: 0;
+      background-color: #4caf50;
+      text-align: center;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <h1>Upload Large MP3 and Convert</h1>
+  <form id="uploadForm">
+    <input type="file" id="audio" accept=".mp3" required><br><br>
+    <label for="format">Output Format:</label>
+    <select name="format" id="format">
+      <option value="wma">WMA</option>
+      <option value="wav">WAV</option>
+      <option value="aac">AAC</option>
+    </select><br><br>
+    <button type="button" onclick="startUpload()">Upload & Convert</button>
+  </form>
+  <div id="progress-bar">
+    <div id="progress">0%</div>
+  </div>
+  <div id="status"></div>
+
+  <script>
+    const ws = new WebSocket('ws://localhost:8080');
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.progress) {
+        document.getElementById('progress').style.width = data.progress + '%';
+        document.getElementById('progress').textContent = data.progress + '%';
+      }
+    };
+
+    async function startUpload() {
+      const fileInput = document.getElementById('audio');
+      const formatSelect = document.getElementById('format');
+      const formData = new FormData();
+      formData.append('audio', fileInput.files[0]);
+
+      const response = await fetch(`/upload?format=${formatSelect.value}`, {
+        method: 'POST',
+        body: formData
+      });
+      const result = await response.json();
+      document.getElementById('status').innerText = 'Conversion in progress. Job ID: ' + result.jobId;
+    }
+  </script>
+</body>
+</html>
